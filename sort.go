@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	sortDesc = 1
-	sortAsc  = 2
+	SortDesc = 1
+	SortAsc  = 2
 )
 
 type Sort struct {
@@ -16,7 +16,7 @@ type Sort struct {
 }
 
 func (s Sort) DescendingAsString() string {
-	if s.Direction == sortDesc {
+	if s.Direction == SortDesc {
 		return "1"
 	}
 

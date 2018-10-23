@@ -238,11 +238,13 @@ type xlsxRow struct {
 }
 
 type xlsxSortCondition struct {
-	Ref        string `xml:"ref,attr"`
-	Descending string `xml:"descending,attr"`
+	XMLName    xml.Name `xml:"sortCondition"`
+	Ref        string   `xml:"ref,attr"`
+	Descending string   `xml:"descending,attr"`
 }
 
 type xlsxSortState struct {
+	XMLName       xml.Name          `xml:"sortState"`
 	Ref           string            `xml:"ref,attr"`
 	SortCondition xlsxSortCondition `xml:"sortCondition"`
 }
