@@ -380,10 +380,10 @@ func (s *Sheet) makeXLSXSheet(refTable *RefTable, styles *xlsxStyleSheet) *xlsxW
 		worksheet.AutoFilter = &xlsxAutoFilter{
 			Ref: fmt.Sprintf("%v:%v", s.AutoFilter.TopLeftCell, s.AutoFilter.BottomRightCell),
 			SortState: xlsxSortState{
-				Ref: fmt.Sprintf("%v:%v", s.AutoFilter.TopLeftCell, s.AutoFilter.BottomRightCell),
+				Ref: s.AutoFilter.Sort.StateRange(s.AutoFilter.TopLeftCell, s.AutoFilter.BottomRightCell),
 				SortCondition: xlsxSortCondition{
 					Descending: s.AutoFilter.Sort.DescendingAsString(),
-					Ref:        s.AutoFilter.Sort.Range(s.AutoFilter.TopLeftCell, s.AutoFilter.BottomRightCell),
+					Ref:        s.AutoFilter.Sort.ConditionRange(s.AutoFilter.TopLeftCell, s.AutoFilter.BottomRightCell),
 				},
 			},
 		}
