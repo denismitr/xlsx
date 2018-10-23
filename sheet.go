@@ -44,6 +44,7 @@ type SheetFormat struct {
 type AutoFilter struct {
 	TopLeftCell     string
 	BottomRightCell string
+	Sort            *Sort
 }
 
 // Add a new Row to a Sheet
@@ -376,7 +377,16 @@ func (s *Sheet) makeXLSXSheet(refTable *RefTable, styles *xlsxStyleSheet) *xlsxW
 	}
 
 	if s.AutoFilter != nil {
-		worksheet.AutoFilter = &xlsxAutoFilter{Ref: fmt.Sprintf("%v:%v", s.AutoFilter.TopLeftCell, s.AutoFilter.BottomRightCell)}
+		worksheet.AutoFilter = &xlsxAutoFilter{
+			Ref: fmt.Sprintf("%v:%v", s.AutoFilter.TopLeftCell, s.AutoFilter.BottomRightCell),
+			SortState: xlsxSortState{
+				Ref: fmt.Sprintf("%v:%v", s.AutoFilter.TopLeftCell, s.AutoFilter.BottomRightCell),
+				SortCondition: xlsxSortCondition{
+					Descending: s.AutoFilter.Sort.DescendingAsString(),
+					Ref:        s.AutoFilter.Sort.Range(s.AutoFilter.TopLeftCell, s.AutoFilter.BottomRightCell),
+				},
+			},
+		}
 	}
 
 	worksheet.SheetData = xSheet
