@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -150,7 +151,7 @@ func (f *File) Write(writer io.Writer) (err error) {
 	return zipWriter.Close()
 }
 
-// Add a new Sheet, with the provided name, to a File. 
+// Add a new Sheet, with the provided name, to a File.
 // The maximum sheet name length is 31 characters. If the sheet name length is exceeded an error is thrown.
 // These special characters are also not allowed: : \ / ? * [ ]
 func (f *File) AddSheet(sheetName string) (*Sheet, error) {
@@ -252,7 +253,11 @@ func (f *File) MarshallParts() (map[string]string, error) {
 		if err != nil {
 			return "", err
 		}
-		return xml.Header + string(body), nil
+
+		r := regexp.MustCompile(`></sortCondition>`)
+		s := r.ReplaceAllString(string(body), "/>")
+
+		return xml.Header + s, nil
 	}
 
 	parts = make(map[string]string)
