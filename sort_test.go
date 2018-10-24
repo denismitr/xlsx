@@ -64,3 +64,81 @@ func Test_ParseCellValueToFloat(t *testing.T) {
 		})
 	}
 }
+
+func Test_SortingByStringWithoutHeader(t *testing.T) {
+	tt := []struct {
+		value         string
+		order         SortDirection
+		expectedIndex int
+		hasHeader     bool
+	}{
+		{"Zap Hike'N Strike Stun 950,000 Volts Gun/Flashlight", SortAsc, 4, false},
+		{"Zap Hike'N Strike Stun 950,000 Volts Gun/Flashlight", SortDesc, 0, false},
+		{"Zap Hike'N Strike Stun 950,000 Volts Gun/Flashlight", SortAsc, 5, true},
+		{"Zap Hike'N Strike Stun 950,000 Volts Gun/Flashlight", SortDesc, 1, true},
+		{"911 Air Horn", SortAsc, 1, false},
+		{"911 Air Horn", SortDesc, 3, false},
+		{"911 Air Horn", SortAsc, 2, true},
+		{"911 Air Horn", SortDesc, 4, true},
+		{"Aya Concealed Carry Purse (Brown)", SortAsc, 1, false},
+		{"Aya Concealed Carry Purse (Brown)", SortDesc, 3, false},
+		{"Aya Concealed Carry Purse (Brown)", SortAsc, 2, true},
+		{"Aya Concealed Carry Purse (Brown)", SortDesc, 4, true},
+		{"Home Safe Safety Beam", SortAsc, 2, false},
+		{"Home Safe Safety Beam", SortDesc, 2, false},
+		{"Home Safe Safety Beam", SortAsc, 3, true},
+		{"Home Safe Safety Beam", SortDesc, 3, true},
+	}
+
+	tvs := []string{
+		`Women's Radiant Concealed Carry Purse: Wine`,
+		`5 Inch IR Dummy Camera Silver`,
+		`Can Safe Shaving Cream`,
+		`zaaap product`,
+	}
+
+	for _, tc := range tt {
+		tc := tc
+
+		t.Run(fmt.Sprintf("Value %s and order %v", tc.value, tc.order), func(t *testing.T) {
+			file := NewFile()
+			sheet, err := file.AddSheet("Sheet1")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if tc.hasHeader {
+				r := sheet.AddRow()
+				r.AddCell()
+				cell := r.AddCell()
+				cell.Value = `Amazon Title`
+				r.AddCell()
+			}
+
+			r := sheet.AddRow()
+			r.AddCell()
+			cell := r.AddCell()
+			cell.Value = tc.value
+			r.AddCell()
+
+			for _, v := range tvs {
+				r := sheet.AddRow()
+				r.AddCell()
+				cell := r.AddCell()
+				cell.Value = v
+				r.AddCell()
+			}
+
+			sheet.SortByColumn(&SortStrategy{
+				ColumnIndex:      1,
+				Direction:        tc.order,
+				ColumnValuesType: SortAllStrings,
+				HasHeader:        tc.hasHeader,
+			})
+
+			if sheet.Rows[tc.expectedIndex].Cells[1].String() != tc.value {
+				t.Fatalf("expected cell to contain '%s', got '%s'", tc.value, sheet.Rows[tc.expectedIndex].Cells[1].String())
+			}
+		})
+	}
+}
