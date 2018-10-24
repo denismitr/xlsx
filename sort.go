@@ -8,19 +8,28 @@ import (
 	"strings"
 )
 
+type CellValueType string
+type SortDirection int
+
 const (
-	SortDesc           = 1
-	SortAsc            = 2
-	SortAllStrings     = "all-strings"
-	SortAllDollars     = "all-dollars"
-	SortAllPercentages = "all-percentages"
+	SortDesc                    SortDirection = 1
+	SortAsc                     SortDirection = 2
+	SortAllStrings              CellValueType = "all-strings"
+	SortAllStringsCaseSensitive CellValueType = "all-strings-case-sensitive"
+	SortAllDollars              CellValueType = "all-dollars"
+	SortAllPercentages          CellValueType = "all-percentages"
+	SortAllFloats               CellValueType = "all-floats"
 )
 
 // SortStrategy for sheet
 type SortStrategy struct {
+	// Optional
+	Column string
+
+	// Required
 	ColumnIndex      int
-	ColumnValuesType string
-	Direction        int
+	ColumnValuesType CellValueType
+	Direction        SortDirection
 	HasHeader        bool
 }
 
@@ -48,7 +57,7 @@ func (s *SortStrategy) stateRange(topLeftCell, topRightCell string) string {
 // conditionRange in column to do sorting e.g. N1:N20
 func (s *SortStrategy) conditionRange(topLeftCell, topRightCell string) string {
 	re := regexp.MustCompile(`^[a-zA-Z]+(\d+)$`)
-	column := resolveColumn(s.ColumnIndex)
+	column := s.getColumn()
 	start := re.ReplaceAllString(topLeftCell, column+"$1")
 	end := re.ReplaceAllString(topRightCell, column+"$1")
 	return fmt.Sprintf("%s:%s", start, end)
@@ -57,39 +66,65 @@ func (s *SortStrategy) conditionRange(topLeftCell, topRightCell string) string {
 func (s *SortStrategy) shouldSwapRows(rowA, rowB *Row) bool {
 	switch s.ColumnValuesType {
 	case SortAllStrings:
+		v1 := strings.ToLower(rowA.Cells[s.ColumnIndex].String())
+		v2 := strings.ToLower(rowB.Cells[s.ColumnIndex].String())
+
 		if s.Direction == SortDesc {
-			return strings.ToLower(rowA.Cells[s.ColumnIndex].String()) < strings.ToLower(rowB.Cells[s.ColumnIndex].String())
+			return v1 < v2
 		}
 
-		return strings.ToLower(rowA.Cells[s.ColumnIndex].String()) > strings.ToLower(rowB.Cells[s.ColumnIndex].String())
+		return v1 > v2
+	case SortAllStringsCaseSensitive:
+		v1 := rowA.Cells[s.ColumnIndex].String()
+		v2 := rowB.Cells[s.ColumnIndex].String()
+
+		if s.Direction == SortDesc {
+			return v1 < v2
+		}
+
+		return v1 > v2
 	case SortAllDollars:
+		v1 := parseCellValueToFloat(rowA.Cells[s.ColumnIndex], "$")
+		v2 := parseCellValueToFloat(rowB.Cells[s.ColumnIndex], "$")
+
 		if s.Direction == SortDesc {
-			return cellWithDollarsToFloat(rowA.Cells[s.ColumnIndex]) > cellWithDollarsToFloat(rowB.Cells[s.ColumnIndex])
+			return v1 < v2
 		}
 
-		return cellWithDollarsToFloat(rowA.Cells[s.ColumnIndex]) > cellWithDollarsToFloat(rowB.Cells[s.ColumnIndex])
+		return v1 > v2
 	case SortAllPercentages:
+		v1 := parseCellValueToFloat(rowA.Cells[s.ColumnIndex], "%")
+		v2 := parseCellValueToFloat(rowB.Cells[s.ColumnIndex], "%")
+
 		if s.Direction == SortDesc {
-			return cellWithPercentageToFloat(rowA.Cells[s.ColumnIndex]) > cellWithPercentageToFloat(rowB.Cells[s.ColumnIndex])
+			return v1 < v2
 		}
 
-		return cellWithPercentageToFloat(rowA.Cells[s.ColumnIndex]) > cellWithPercentageToFloat(rowB.Cells[s.ColumnIndex])
+		return v1 > v2
+	case SortAllFloats:
+		v1 := parseCellValueToFloat(rowA.Cells[s.ColumnIndex], "")
+		v2 := parseCellValueToFloat(rowB.Cells[s.ColumnIndex], "")
+
+		if s.Direction == SortDesc {
+			return v1 < v2
+		}
+
+		return v1 > v2
 	default:
 		return false
 	}
 }
 
-func cellWithDollarsToFloat(c *Cell) float64 {
-	stripped := strings.Trim(strings.Replace(c.String(), "$", "", 1), " ")
-	if f, err := strconv.ParseFloat(stripped, 64); err == nil {
-		return f
+func (s *SortStrategy) getColumn() string {
+	if s.Column != "" {
+		return s.Column
 	}
 
-	return 0
+	return resolveColumn(s.ColumnIndex)
 }
 
-func cellWithPercentageToFloat(c *Cell) float64 {
-	stripped := strings.Trim(strings.Replace(c.String(), "%", "", 1), " ")
+func parseCellValueToFloat(c *Cell, cut string) float64 {
+	stripped := strings.Trim(strings.Replace(c.String(), cut, "", 1), " ")
 	if f, err := strconv.ParseFloat(stripped, 64); err == nil {
 		return f
 	}
