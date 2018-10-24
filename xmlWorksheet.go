@@ -237,8 +237,21 @@ type xlsxRow struct {
 	OutlineLevel uint8   `xml:"outlineLevel,attr,omitempty"`
 }
 
+type xlsxSortCondition struct {
+	XMLName    xml.Name `xml:"sortCondition"`
+	Descending string   `xml:"descending,attr"`
+	Ref        string   `xml:"ref,attr"`
+}
+
+type xlsxSortState struct {
+	XMLName       xml.Name          `xml:"sortState"`
+	Ref           string            `xml:"ref,attr"`
+	SortCondition xlsxSortCondition `xml:"sortCondition"`
+}
+
 type xlsxAutoFilter struct {
-	Ref string `xml:"ref,attr"`
+	Ref       string        `xml:"ref,attr"`
+	SortState xlsxSortState `xml:"sortState,omitempty"`
 }
 
 type xlsxMergeCell struct {
