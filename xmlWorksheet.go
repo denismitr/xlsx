@@ -239,8 +239,8 @@ type xlsxRow struct {
 
 type xlsxSortCondition struct {
 	XMLName    xml.Name `xml:"sortCondition"`
-	Ref        string   `xml:"ref,attr"`
 	Descending string   `xml:"descending,attr"`
+	Ref        string   `xml:"ref,attr"`
 }
 
 type xlsxSortState struct {

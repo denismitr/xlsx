@@ -44,7 +44,40 @@ type SheetFormat struct {
 type AutoFilter struct {
 	TopLeftCell     string
 	BottomRightCell string
-	Sort            *Sort
+	Sort            *SortStrategy
+}
+
+// SortByColumn - sort rows of the sheet by column values
+// using sort strategy
+func (s *Sheet) SortByColumn(srt *SortStrategy) {
+	rowsCount := len(s.Rows)
+
+	if rowsCount == 0 {
+		return
+	}
+
+	startIndex := 0
+
+	if srt.HasHeader {
+		startIndex = 1
+	}
+
+	for i := startIndex; i < rowsCount; i++ {
+		swapped := false
+
+		for j := startIndex; j < rowsCount-i+startIndex-1; j++ {
+			if srt.shouldSwapRows(s.Rows[j], s.Rows[j+1]) {
+				s.Rows[j], s.Rows[j+1] = s.Rows[j+1], s.Rows[j]
+				swapped = true
+			}
+		}
+
+		// If no two elements were swapped
+		// by the inner loop, break
+		if !swapped {
+			break
+		}
+	}
 }
 
 // Add a new Row to a Sheet
@@ -380,10 +413,10 @@ func (s *Sheet) makeXLSXSheet(refTable *RefTable, styles *xlsxStyleSheet) *xlsxW
 		worksheet.AutoFilter = &xlsxAutoFilter{
 			Ref: fmt.Sprintf("%v:%v", s.AutoFilter.TopLeftCell, s.AutoFilter.BottomRightCell),
 			SortState: xlsxSortState{
-				Ref: s.AutoFilter.Sort.StateRange(s.AutoFilter.TopLeftCell, s.AutoFilter.BottomRightCell),
+				Ref: s.AutoFilter.Sort.stateRange(s.AutoFilter.TopLeftCell, s.AutoFilter.BottomRightCell),
 				SortCondition: xlsxSortCondition{
-					Descending: s.AutoFilter.Sort.DescendingAsString(),
-					Ref:        s.AutoFilter.Sort.ConditionRange(s.AutoFilter.TopLeftCell, s.AutoFilter.BottomRightCell),
+					Descending: s.AutoFilter.Sort.descendingAsString(),
+					Ref:        s.AutoFilter.Sort.conditionRange(s.AutoFilter.TopLeftCell, s.AutoFilter.BottomRightCell),
 				},
 			},
 		}
